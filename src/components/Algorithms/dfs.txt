@@ -1,0 +1,52 @@
+//Simple depth first search
+n = number of nodes in the graph
+g = adjacency list representing graph
+visited = [false, ..., false]# size n
+
+function dfs(at):
+  if visited[at]: return
+  visited[at] = true
+
+  neighbours = graph[at]
+  for next in neighbours:
+    dfs(next)
+
+#start DFS at node 0
+start_node = 0
+dfs(start_node)
+
+
+
+//Finding all component groups
+#global or clas scope variables
+n = number of nodes in the graph
+g = adjacency list representing graph
+count = 0
+components = empty integer array # size neighbours
+visited = [false, ..., false] #size neighbours
+
+function findComponents():
+  for(i = 0; i < n; i++):
+    if !visited[i]:
+      count++
+      dfs(i)
+  return (count, components)
+
+function dfs(at):
+  visited[at] = true
+  components[at] = count
+  for(next : g[at]):
+    if !visited[next]:
+      dfs(next)
+
+
+What else can DFS do?
+we can augment the dfs algorithm to:
+- compute a grph's minimum spanning tree
+- detect and find cycles in a graph
+- check if  graph is bipartite
+- find strongly connected components
+- topolofically sort the nodes of a graph
+- find bridges and articulation points
+- find augmenting paths in a flow network
+- generate mazes
