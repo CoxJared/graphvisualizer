@@ -1,10 +1,12 @@
-import Node from "../Node/Node";
+
+import React from 'react';
+import Canvas from '../Canvas/Canvas'
+import Grid from '../Grid/Grid';
 
 function Home() {
   return (
     <div>
-      <Node top={400} left={400} />
-      <Node top={450} left={550} />
+      <Grid />
     </div>
   );
 }
