@@ -1,15 +1,17 @@
 import React from 'react'
 
+const MAX_X = 20;
+const MAX_Y = 15;
 
 const gridStyling = {
-  width: '500px',
-  height: '500px',
+  width: `${MAX_X * 50}px`,
+  height: `${MAX_Y * 50}px`,
   backgroundColor: '#555555'
 }
 
 const rowStyling = {
-  width: '500px',
-  height: '50px',
+  width: `${MAX_X * 50}px`,
+  height: `50px`,
   backgroundColor: '#222222',
   display: 'flex'
 }
@@ -19,7 +21,8 @@ const elemStyling = (colorId) => {
     0: '#444444',
     1: '#447777',
     2: '#44AA77',
-    3: '#CC4444'
+    3: '#CC4444',
+    4: '#999933'
   }
   return ({
     width: '40px',
@@ -29,9 +32,10 @@ const elemStyling = (colorId) => {
   });
 }
 
+
 function getDirectionVectors(x, y, maxX, maxY) {
-  let dx = [-1, 1, 0, 0];
-  let dy = [0, 0, -1, 1];
+  let dx = [-1, 0, 1, 0];
+  let dy = [0, -1, 0, 1];
   let adjacentCells = [];
 
   for (let i = 0; i < 4; i++) {
@@ -49,40 +53,87 @@ function getDirectionVectors(x, y, maxX, maxY) {
 class Grid extends React.Component {
   constructor() {
     super();
-    let grid = [
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 2, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 3, 0, 0],
-      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
+    let grid = [];
+    let prev = [];
+    for (let i = 0; i < MAX_Y; i++) {
+      let row = [];
+      let prevRow = [];
+      for (let ii = 0; ii < MAX_X; ii++) {
+        row.push(0);
+        prevRow.push(null);
+      }
+      grid.push(row);
+      prev.push(prevRow);
+    }
+    let startingPosition = [2, 3];
+    let endingPosition = [5, 7];
+    grid[startingPosition[0]][startingPosition[1]] = 2;
+    grid[endingPosition[0]][endingPosition[1]] = 3;
+
     this.state = {
       grid,
-      startingPosition: [2, 3],
-      endingPosition: [8, 7],
+      prev,
+      startingPosition,
+      endingPosition,
       queue: [[2, 3]]
     };
   }
 
-  getNeigbours(position) {
-    let possibleNeighbours = getDirectionVectors(position[0], position[1], 9, 9);
-    console.log(position);
-    console.log(possibleNeighbours);
+  getUnvisitedNeigbours = (position) => {
+    let possibleNeighbours = getDirectionVectors(position[0], position[1], MAX_X - 1, MAX_Y - 1);
+    let availableNeighbours = [];
+    possibleNeighbours.forEach(neighbour => {
+      if (this.state.grid[neighbour[0]][neighbour[1]] == 0 || this.state.grid[neighbour[0]][neighbour[1]] == 3) {
+        availableNeighbours.push([neighbour[0], neighbour[1]]);
+      }
+    })
+    return availableNeighbours
   }
 
   solve = () => {
+    // setInterval(() => {
+    // console.log(this.state.queue);
     if (this.state.queue.length > 0) {
       let queue = this.state.queue;
+      let prev = this.state.prev;
       let current = queue.shift();
-      let neighbours = this.getNeigbours(current);
 
 
-      this.setState({ queue })
+      let grid = this.state.grid;
+      if (grid[current[0]][current[1]] == 3) {
+        console.log("Solved")
+        console.log(this.state.prev);
+
+        let solutionChain = [];
+        let step = prev[current[0]][current[1]];
+
+        while (prev[step[0]][step[1]] != null) {
+          solutionChain.push(step);
+          grid[step[0]][step[1]] = 4;
+          step = prev[step[0]][step[1]];
+        }
+        console.log(solutionChain);
+      }
+      if (grid[current[0]][current[1]] == 0)
+        grid[current[0]][current[1]] = 1;
+
+
+
+
+      let neighbours = this.getUnvisitedNeigbours(current);
+
+      neighbours.forEach(neighbour => {
+        if (!queue.some(x => (
+          x[0] == neighbour[0] && x[1] == neighbour[1]
+        ))) {
+          prev[neighbour[0]][neighbour[1]] = [current[0], current[1]];
+          queue.push(neighbour);
+        }
+      });
+
+      this.setState({ queue, prev, grid })
     }
+    // }, 100);
   }
 
 
