@@ -28,7 +28,8 @@ const elemStyling = (colorId) => {
     width: '40px',
     height: '40px',
     margin: '5px',
-    backgroundColor: colors[colorId]
+    backgroundColor: colors[colorId],
+    transition: '.2s ease'
   });
 }
 
@@ -65,22 +66,42 @@ class Grid extends React.Component {
       grid.push(row);
       prev.push(prevRow);
     }
-    let startingPosition = [2, 3];
-    let endingPosition = [5, 7];
-    grid[startingPosition[0]][startingPosition[1]] = 2;
-    grid[endingPosition[0]][endingPosition[1]] = 3;
+    // let startingPosition = [2, 3];
+    // let endingPosition = [5, 7];
+    // grid[startingPosition[0]][startingPosition[1]] = 2;
+    // grid[endingPosition[0]][endingPosition[1]] = 3;
 
     this.state = {
       grid,
       prev,
-      startingPosition,
-      endingPosition,
-      queue: [[2, 3]]
+      // startingPosition,
+      // endingPosition,
+      clickType: 0,
+      queue: []
     };
   }
 
+  handleClick = (x, y) => {
+    let grid = this.state.grid;
+    grid[x][y] = -1;
+
+    if (this.state.clickType == 0) {
+      grid[x][y] = 2;
+      this.setState({ grid, queue: [[x, y]], clickType: 1 })
+    } else if
+      (this.state.clickType == 1) {
+      grid[x][y] = 3;
+      this.setState({ grid, clickType: 2 })
+    } else {
+      grid[x][y] = -1;
+      this.setState({ grid });
+    }
+
+    this.setState({ grid });
+  }
+
   getUnvisitedNeigbours = (position) => {
-    let possibleNeighbours = getDirectionVectors(position[0], position[1], MAX_X - 1, MAX_Y - 1);
+    let possibleNeighbours = getDirectionVectors(position[0], position[1], MAX_Y - 1, MAX_X - 1);
     let availableNeighbours = [];
     possibleNeighbours.forEach(neighbour => {
       if (this.state.grid[neighbour[0]][neighbour[1]] == 0 || this.state.grid[neighbour[0]][neighbour[1]] == 3) {
@@ -91,59 +112,51 @@ class Grid extends React.Component {
   }
 
   solve = () => {
-    // setInterval(() => {
-    // console.log(this.state.queue);
-    if (this.state.queue.length > 0) {
-      let queue = this.state.queue;
-      let prev = this.state.prev;
-      let current = queue.shift();
+    setInterval(() => {
+      if (this.state.queue.length > 0) {
+        let { queue, grid, prev } = this.state;
+        let current = queue.shift();
 
+        if (grid[current[0]][current[1]] == 3) {
+          queue = [];
 
-      let grid = this.state.grid;
-      if (grid[current[0]][current[1]] == 3) {
-        console.log("Solved")
-        console.log(this.state.prev);
+          let solutionChain = [];
+          let step = prev[current[0]][current[1]];
+          while (prev[step[0]][step[1]] != null) {
+            solutionChain.push(step);
+            grid[step[0]][step[1]] = 4;
+            step = prev[step[0]][step[1]];
+          }
+          this.setState({ solutionChain });
+        } else {
 
-        let solutionChain = [];
-        let step = prev[current[0]][current[1]];
+          if (grid[current[0]][current[1]] == 0)
+            grid[current[0]][current[1]] = 1;
 
-        while (prev[step[0]][step[1]] != null) {
-          solutionChain.push(step);
-          grid[step[0]][step[1]] = 4;
-          step = prev[step[0]][step[1]];
+          let neighbours = this.getUnvisitedNeigbours(current);
+          neighbours.forEach(neighbour => {
+            if (!queue.some(x => (
+              x[0] == neighbour[0] && x[1] == neighbour[1]
+            ))) {
+              prev[neighbour[0]][neighbour[1]] = [current[0], current[1]];
+              queue.push(neighbour);
+            }
+          });
         }
-        console.log(solutionChain);
+        this.setState({ queue, prev, grid })
+
       }
-      if (grid[current[0]][current[1]] == 0)
-        grid[current[0]][current[1]] = 1;
-
-
-
-
-      let neighbours = this.getUnvisitedNeigbours(current);
-
-      neighbours.forEach(neighbour => {
-        if (!queue.some(x => (
-          x[0] == neighbour[0] && x[1] == neighbour[1]
-        ))) {
-          prev[neighbour[0]][neighbour[1]] = [current[0], current[1]];
-          queue.push(neighbour);
-        }
-      });
-
-      this.setState({ queue, prev, grid })
-    }
-    // }, 100);
+    }, 100);
   }
 
 
   render() {
     return (<div style={gridStyling}>
-      {this.state.grid.map(row => (
+      {this.state.grid.map((row, y) => (
         <div style={rowStyling}>
           {
-            row.map(elem => (
-              <div style={elemStyling(elem)} />
+            row.map((elem, x) => (
+              <div onClick={this.handleClick.bind(this, y, x)} style={elemStyling(elem)} />
             ))
           }
         </div>
