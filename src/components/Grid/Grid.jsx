@@ -113,12 +113,13 @@ class Grid extends React.Component {
 
   solve = () => {
     setInterval(() => {
-      if (this.state.queue.length > 0) {
-        let { queue, grid, prev } = this.state;
+      let { queue, grid, prev } = this.state;
+      let newQueue = [];
+      while (queue.length > 0) {
         let current = queue.shift();
-
         if (grid[current[0]][current[1]] == 3) {
           queue = [];
+          newQueue = [];
 
           let solutionChain = [];
           let step = prev[current[0]][current[1]];
@@ -129,7 +130,6 @@ class Grid extends React.Component {
           }
           this.setState({ solutionChain });
         } else {
-
           if (grid[current[0]][current[1]] == 0)
             grid[current[0]][current[1]] = 1;
 
@@ -137,18 +137,32 @@ class Grid extends React.Component {
           neighbours.forEach(neighbour => {
             if (!queue.some(x => (
               x[0] == neighbour[0] && x[1] == neighbour[1]
-            ))) {
+            )) &&
+              (!newQueue.some(x => (
+                x[0] == neighbour[0] && x[1] == neighbour[1]
+              )))) {
               prev[neighbour[0]][neighbour[1]] = [current[0], current[1]];
-              queue.push(neighbour);
+              newQueue.push(neighbour);
             }
           });
         }
-        this.setState({ queue, prev, grid })
-
       }
-    }, 100);
+      queue = newQueue;
+      this.setState({ queue, prev, grid })
+    }, 150);
   }
 
+  randomizeBlanks = () => {
+    let grid = this.state.grid;
+    for (let i = 0; i < grid.length; i++) {
+      for (let j = 0; j < grid[0].length; j++) {
+        if (grid[i][j] == 0 || grid[i][j] == -1) {
+          grid[i][j] = ((Math.floor(Math.random() * 3.5) == 1) ? -1 : 0);
+        }
+      }
+    }
+    this.setState({ grid });
+  }
 
   render() {
     return (<div style={gridStyling}>
@@ -162,6 +176,7 @@ class Grid extends React.Component {
         </div>
       ))}
       <button onClick={this.solve}>Click</button>
+      <button onClick={this.randomizeBlanks}>Random</button>
     </div>)
   }
 }
