@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 
 const MAX_X = 30;
 const MAX_Y = 17;
@@ -49,8 +49,6 @@ function getDirectionVectors(x, y, maxX, maxY) {
   }
   return adjacentCells;
 }
-
-
 
 class Grid extends React.Component {
   constructor() {
