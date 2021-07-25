@@ -27,7 +27,8 @@ const elemStyling = (colorId) => {
     11: '#44AA77', //starting
     12: '#eeee77', //ending
     13: '#999933', //found path
-    14: '#aa3333' //no path found
+    14: '#aa3333', //no path found
+    15: '#44AABB' //found shortest
   }
   return ({
     width: '40px',
@@ -52,6 +53,13 @@ function getDirectionVectors(x, y, maxX, maxY) {
     adjacentCells.push([xx, yy]);
   }
   return adjacentCells;
+}
+
+function displayQueue(queue, weightedPaths) {
+  console.log("Displaying Queue");
+  queue.forEach(x => {
+    console.log(x, weightedPaths[x[0]][x[1]]);
+  });
 }
 
 class DijkstraGrid extends React.Component {
@@ -96,13 +104,14 @@ class DijkstraGrid extends React.Component {
   }
 
   handleClick = (x, y) => {
-    let { grid, coloredGrid } = this.state;
+    let { grid, coloredGrid, weightedPaths } = this.state;
     // grid[x][y] = -1;
 
     if (this.state.clickType == 0) {
       grid[x][y] = 11;
       coloredGrid[x][y] = 11;
-      this.setState({ grid, queue: [[x, y]], clickType: 1 })
+      weightedPaths[x][y] = 0;
+      this.setState({ grid, queue: [[x, y]], clickType: 1, weightedPaths })
     } else if
       (this.state.clickType == 1) {
       console.log("2")
@@ -137,35 +146,49 @@ class DijkstraGrid extends React.Component {
 
   getNeighboursToUpdate = (node) => {
     let { grid, weightedPaths, shortestFound } = this.state;
-
   }
 
+
+
   solve = () => {
-    let { grid, prev, weightedPaths, shortestFound, queue } = this.state;
+    let { grid, prev, weightedPaths, shortestFound, coloredGrid, queue } = this.state;
     let currentNode = queue.shift();
     console.log("current node", currentNode);
     shortestFound[currentNode[0]][currentNode[1]] = true;
+    if (coloredGrid[currentNode[0]][currentNode[1]] != 11)
+      coloredGrid[currentNode[0]][currentNode[1]] = 15;
     let nodeWeight = weightedPaths[currentNode[0]][currentNode[1]];
     let possibleNeighboursToUpdate = getDirectionVectors(currentNode[0], currentNode[1], MAX_Y - 1, MAX_X - 1);
+
     possibleNeighboursToUpdate.forEach(neighbour => {
+      console.log("Checking neighbour", neighbour, "Weightpath", weightedPaths[neighbour[0]][neighbour[1]], "node weight", nodeWeight, "Grid", grid[neighbour[0]][neighbour[1]]);
       if (weightedPaths[neighbour[0]][neighbour[1]] > (nodeWeight + grid[neighbour[0]][neighbour[1]])) {
         shortestFound[neighbour[0]][neighbour[1]] = true;
         weightedPaths[neighbour[0]][neighbour[1]] = nodeWeight + grid[neighbour[0]][neighbour[1]];
         prev[neighbour[0]][neighbour[1]] = [currentNode[0], currentNode[1]];
+        coloredGrid[neighbour[0]][neighbour[1]] = 15;
         if (!queue.some(node => node[0] == neighbour[0] && node[1] == neighbour[1]))
           queue.push([neighbour[0], neighbour[1]]);
-      } else if (weightedPaths[neighbour[0]][neighbour[1]] == 1) {
+      }
+      else if (weightedPaths[neighbour[0]][neighbour[1]] == -1) {
+        console.log("Node weight", nodeWeight, "grid", grid[neighbour[0]][neighbour[1]]);
+        console.log("setting", neighbour[0], neighbour[1], "to", nodeWeight + grid[neighbour[0]][neighbour[1]]);
         weightedPaths[neighbour[0]][neighbour[1]] = nodeWeight + grid[neighbour[0]][neighbour[1]];
         prev[neighbour[0]][neighbour[1]] = [currentNode[0], currentNode[1]];
+        coloredGrid[neighbour[0]][neighbour[1]] = 10;
         queue.push([neighbour[0], neighbour[1]]);
       }
     })
-    console.log("grid", grid);
-    console.log("prev", prev);
-    console.log("weighted path", weightedPaths);
-    console.log("shortestFoudn", shortestFound);
-    console.log("queue", queue);
-    this.setState({ grid, prev, weightedPaths, shortestFound, queue })
+    displayQueue(queue, weightedPaths);
+    queue.sort((a, b) =>
+      weightedPaths[a[0]][a[1]] - weightedPaths[b[0]][b[1]]);
+    displayQueue(queue, weightedPaths);
+    // console.log("grid", grid);
+    // console.log("prev", prev);
+    // console.log("weighted path", weightedPaths);
+    // console.log("shortestFound", shortestFound);
+    // console.log("queue", queue);
+    this.setState({ grid, prev, weightedPaths, shortestFound, queue });
   }
 
   render() {
